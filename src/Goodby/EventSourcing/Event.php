@@ -21,7 +21,7 @@ interface Event
     public function toContractualData();
 
     /**
-     * @param mixed[] $data
+     * @param array $data
      * @return Event
      */
     public static function fromContractualData(array $data);
