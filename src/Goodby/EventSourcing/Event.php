@@ -16,7 +16,7 @@ interface Event
 
     /**
      * Must return a primitive key-value set which is serializable.
-     * @return mixed[]
+     * @return array
      */
     public function toContractualData();
 
