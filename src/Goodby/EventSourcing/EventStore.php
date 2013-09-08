@@ -24,6 +24,13 @@ interface EventStore
     public function eventStreamSince(EventStreamId $eventStreamId);
 
     /**
+     * Drop all events from event store.
+     * Mainly used for testing.
+     * @return void
+     */
+    public function purge();
+
+    /**
      * @param EventNotifiable $eventNotifiable
      * @return void
      */

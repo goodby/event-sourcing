@@ -127,6 +127,16 @@ class MySQLEventStore implements EventStore
     }
 
     /**
+     * Drop all events from event store.
+     * Mainly used for testing.
+     * @return void
+     */
+    public function purge()
+    {
+        $this->connection->exec('TRUNCATE TABLE '.$this->tableName);
+    }
+
+    /**
      * @param EventNotifiable $eventNotifiable
      * @return void
      */
