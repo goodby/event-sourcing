@@ -9,3 +9,8 @@ CREATE TABLE `event_store` (
   PRIMARY KEY (`event_id`)
 )
   ENGINE =InnoDB;
+
+CREATE TABLE `tbl_dispatcher_last_event` (
+  `event_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`event_id`)
+) ENGINE=InnoDB;

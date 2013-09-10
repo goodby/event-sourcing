@@ -4,6 +4,7 @@ namespace Goodby\EventSourcing\EventStore;
 
 use Exception;
 use Goodby\Assertion\Assert;
+use Goodby\EventSourcing\DispatchableEvent;
 use Goodby\EventSourcing\Event;
 use Goodby\EventSourcing\EventNotifiable;
 use Goodby\EventSourcing\EventSerializer;
@@ -127,6 +128,35 @@ class MySQLEventStore implements EventStore
     }
 
     /**
+     * @param string $lastDispatchedEventId
+     * @throws \Exception
+     * @return DispatchableEvent[]
+     */
+    public function dispatchableEventsSince($lastDispatchedEventId)
+    {
+        try {
+            $statement = $this->connection->prepare(
+                "SELECT event_id, event_body, event_type FROM {$this->tableName} WHERE event_id > :event_id ORDER BY event_id"
+            );
+            $statement->bindValue(':event_id', $lastDispatchedEventId);
+            $statement->execute();
+
+            $events = [];
+
+            foreach ($statement as $result) {
+                $events[] = new DispatchableEvent(
+                    $result['event_id'],
+                    $this->deserializeEvent($result['event_type'], $result['event_body'])
+                );
+            }
+
+            return $events;
+        } catch (Exception $because) {
+            throw EventSourcingException::cannotQueryDispatchableEventsSince($lastDispatchedEventId, $because);
+        }
+    }
+
+    /**
      * Drop all events from event store.
      * Mainly used for testing.
      * @return void
@@ -171,12 +201,22 @@ class MySQLEventStore implements EventStore
 
         foreach ($resultSet as $result) {
             $version = $result['stream_version'];
-            $events[] = $this->serializer->deserialize(
-                strtr($result['event_type'], '.', '\\'),
-                $result['event_body']
-            );;
+            $events[] = $this->deserializeEvent($result['event_type'], $result['event_body']);
         }
 
         return new EventStream($version, $events);
+    }
+
+    /**
+     * @param string $eventType
+     * @param string $eventBody
+     * @return Event
+     */
+    private function deserializeEvent($eventType, $eventBody)
+    {
+        return $this->serializer->deserialize(
+            strtr($eventType, '.', '\\'),
+            $eventBody
+        );
     }
 }

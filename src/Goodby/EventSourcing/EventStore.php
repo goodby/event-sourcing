@@ -24,6 +24,12 @@ interface EventStore
     public function eventStreamSince(EventStreamId $eventStreamId);
 
     /**
+     * @param string $lastDispatchedEventId
+     * @return DispatchableEvent[]
+     */
+    public function dispatchableEventsSince($lastDispatchedEventId);
+
+    /**
      * Drop all events from event store.
      * Mainly used for testing.
      * @return void

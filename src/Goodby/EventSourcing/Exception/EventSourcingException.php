@@ -60,4 +60,16 @@ class EventSourcingException extends \RuntimeException
             sprintf('Could not deserialize event, because: %s', $reason)
         );
     }
+
+    /**
+     * @param string $lastDispatchedEventId
+     * @param Exception $because
+     * @return EventSourcingException
+     */
+    public static function cannotQueryDispatchableEventsSince($lastDispatchedEventId, Exception $because)
+    {
+        return new self(
+            sprintf('Cannot query event for sequence since: %s because: %s', $lastDispatchedEventId, $because->getMessage())
+        );
+    }
 }
