@@ -31,6 +31,8 @@ class FollowStoreEventDispatcher implements EventNotifiable, EventDispatcher
     {
         $this->eventStore = $eventStore;
         $this->connection = $connection;
+
+        $this->eventStore->registerEventNotifiable($this);
     }
 
     /**
@@ -62,33 +64,36 @@ class FollowStoreEventDispatcher implements EventNotifiable, EventDispatcher
         return true;
     }
 
-
     /**
      * @throws EventDispatchException
      */
     public function notifyEvents()
     {
+        $finally = function () {
+            $this->connection->rollBack();
+        };
+
         try {
             $this->connection->beginTransaction();
 
             $undispatchedEvents = $this->eventStore->dispatchableEventsSince($this->lastDispatchedEventId());
 
-            if (count($undispatchedEvents) === 0) {
-                return; // nothing to do
+            if (count($undispatchedEvents) > 0) {
+                foreach ($undispatchedEvents as $event) {
+                    $this->dispatch($event);
+                }
+
+                $withLastEventId = $undispatchedEvents[count($undispatchedEvents) - 1];
+
+                $this->setLastDispatchedEventId($withLastEventId->eventId());
             }
-
-            foreach ($undispatchedEvents as $event) {
-                $this->dispatch($event);
-            }
-
-            $withLastEventId = $undispatchedEvents[count($undispatchedEvents) - 1];
-
-            $this->setLastDispatchedEventId($withLastEventId->eventId());
 
             $this->connection->commit();
         } catch (EventDispatchException $e) {
+            $finally();
             throw $e;
         } catch (Exception $because) {
+            $finally();
             throw EventDispatchException::cannotDispatchEvents($because);
         }
     }
